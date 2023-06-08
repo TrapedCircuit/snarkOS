@@ -139,6 +139,9 @@ impl<N: Network, C: ConsensusStorage<N>, R: Routing<N>> Rest<N, C, R> {
             .route("/testnet3/node/address", get(Self::get_node_address))
             .route("/testnet3/node/env", get(Self::get_env_info))
 
+            // Mori
+            .route("/testnet3/mori/node/:id", get(Self::get_mori_node))
+
             // Pass in `Rest` to make things convenient.
             .with_state(self.clone())
             // Enable tower-http tracing.

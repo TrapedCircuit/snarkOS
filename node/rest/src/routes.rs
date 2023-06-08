@@ -14,10 +14,11 @@
 
 use super::*;
 
+use once_cell::sync::OnceCell;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use snarkos_node_env::ENV_INFO;
-use snarkvm::prelude::Transaction;
+use snarkvm::prelude::{Identifier, Plaintext, Transaction};
 
 /// The `get_blocks` query object.
 #[derive(Deserialize, Serialize)]
@@ -241,5 +242,18 @@ impl<N: Network, C: ConsensusStorage<N>, R: Routing<N>> Rest<N, C, R> {
         rest.routing.propagate(message, &[]);
 
         Ok(ErasedJson::pretty(tx_id))
+    }
+
+    // GET /testnet3/mori/node/{node_id}
+    pub(crate) async fn get_mori_node(
+        State(rest): State<Self>,
+        Path(node_id): Path<String>,
+    ) -> Result<ErasedJson, RestError> {
+        let program_id = ProgramID::<N>::from_str("mori.aleo")?;
+        let map_id = Identifier::<N>::from_str("nodes")?;
+        let node_id = Field::<N>::from_str(&node_id)?;
+        let key = Plaintext::Literal(snarkvm::prelude::Literal::Field(node_id), OnceCell::new());
+        let value = rest.ledger.vm().finalize_store().get_value_speculative(&program_id, &map_id, &key)?;
+        Ok(ErasedJson::pretty(value))
     }
 }
